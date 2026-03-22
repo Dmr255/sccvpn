@@ -11,6 +11,62 @@ MB='\e[35;1m'    # Magenta Bold
 CB='\e[36;1m'    # Cyan Bold
 WB='\e[37;1m'    # White Bold
 
+# Service control functions
+ssh_service() {
+    clear
+    echo -e "${YB}SSH Service Control${NC}"
+    echo "1) Start"
+    echo "2) Stop"
+    echo "3) Restart"
+    echo "4) Status"
+    read -p "Select action: " act
+    case $act in
+        1) ssh-ctl start ;;
+        2) ssh-ctl stop ;;
+        3) ssh-ctl restart ;;
+        4) ssh-ctl status ;;
+        *) echo -e "${YB}Invalid selection${NC}" ;;
+    esac
+    read -n 1 -s -r -p "Press any key to back on menu"
+    show_menu
+}
+sstp_service() {
+    clear
+    echo -e "${YB}SSTP Service Control${NC}"
+    echo "1) Start"
+    echo "2) Stop"
+    echo "3) Restart"
+    echo "4) Status"
+    read -p "Select action: " act
+    case $act in
+        1) sstp-ctl start ;;
+        2) sstp-ctl stop ;;
+        3) sstp-ctl restart ;;
+        4) sstp-ctl status ;;
+        *) echo -e "${YB}Invalid selection${NC}" ;;
+    esac
+    read -n 1 -s -r -p "Press any key to back on menu"
+    show_menu
+}
+zivpn_service() {
+    clear
+    echo -e "${YB}ZIVPN Service Control${NC}"
+    echo "1) Start"
+    echo "2) Stop"
+    echo "3) Restart"
+    echo "4) Status"
+    read -p "Select action: " act
+    case $act in
+        1) zivpn-ctl start ;;
+        2) zivpn-ctl stop ;;
+        3) zivpn-ctl restart ;;
+        4) zivpn-ctl status ;;
+        *) echo -e "${YB}Invalid selection${NC}" ;;
+    esac
+    read -n 1 -s -r -p "Press any key to back on menu"
+    show_menu
+}
+
 # Fungsi untuk menampilkan menu
 show_menu() {
     clear
@@ -29,6 +85,9 @@ show_menu() {
     echo -e " ${MB}[7]${NC} ${YB}Change Domain${NC}"
     echo -e " ${MB}[8]${NC} ${YB}Cert Acme.sh${NC}"
     echo -e " ${MB}[9]${NC} ${YB}About Script${NC}"
+    echo -e " ${MB}[10]${NC} ${YB}SSH Service${NC}"
+    echo -e " ${MB}[11]${NC} ${YB}SSTP Service${NC}"
+    echo -e " ${MB}[12]${NC} ${YB}ZIVPN Service${NC}"
     echo -e "${BB}————————————————————————————————————————————————————————${NC}"
     echo -e ""
     # echo -e "${RB}Jika kalian mengubah domain maka Akun yang yang sudah dibuat akan hilang, Jadi tolong hati-hati.${NC}"
@@ -48,6 +107,9 @@ handle_menu() {
         7) clear ; dns ;;
         8) clear ; certxray ;;
         9) clear ; about ;;
+        10) ssh_service ;;
+        11) sstp_service ;;
+        12) zivpn_service ;;
         *) echo -e "${YB}Invalid input${NC}" ; sleep 1 ; show_menu ;;
     esac
 }
