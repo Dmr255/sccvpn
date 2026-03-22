@@ -21,11 +21,53 @@ generate_uuid() {
     cat /proc/sys/kernel/random/uuid
 }
 
-# Fungsi untuk menambahkan konfigurasi ke file Xray
-add_xray_config() {
-    local section=$1
-    local content=$2
-    sed -i "/#$section\$/a\\#&@ $user $exp\n$content" /usr/local/etc/xray/config/04_inbounds.json
+CONFIG_FILE="/usr/local/etc/xray/config/04_inbounds.json"
+ACCOUNTS_FILE="/usr/local/etc/xray/accounts.tsv"
+
+save_account() {
+    mkdir -p "$(dirname "$ACCOUNTS_FILE")"
+    touch "$ACCOUNTS_FILE"
+    grep -v -F "${user}	" "$ACCOUNTS_FILE" > "${ACCOUNTS_FILE}.tmp" || true
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$user" "$exp" "$uuid" "$pwtr" "$pwss" "$userpsk" >> "${ACCOUNTS_FILE}.tmp"
+    mv "${ACCOUNTS_FILE}.tmp" "$ACCOUNTS_FILE"
+}
+
+add_xray_clients() {
+    local tmp_file
+    tmp_file=$(mktemp)
+
+    if ! jq \
+      --arg user "$user" \
+      --arg uuid "$uuid" \
+      --arg pwtr "$pwtr" \
+      --arg pwss "$pwss" \
+      --arg userpsk "$userpsk" \
+      --arg cipher "$cipher" \
+      '
+      .inbounds |= map(
+        if .tag == "in-01" then
+          .settings.clients += [{"flow":"xtls-rprx-vision","id":$uuid,"email":$user}]
+        elif .protocol == "vless" then
+          .settings.clients += [{"id":$uuid,"email":$user}]
+        elif .protocol == "vmess" then
+          .settings.clients += [{"id":$uuid,"email":$user}]
+        elif .protocol == "trojan" then
+          .settings.clients += [{"password":$pwtr,"email":$user}]
+        elif .protocol == "shadowsocks" and .settings.method == "2022-blake3-aes-256-gcm" then
+          .settings.clients += [{"password":$userpsk,"email":$user}]
+        elif .protocol == "shadowsocks" then
+          .settings.clients += [{"method":$cipher,"password":$pwss,"email":$user}]
+        else
+          .
+        end
+      )
+      ' "$CONFIG_FILE" > "$tmp_file"; then
+        rm -f "$tmp_file"
+        echo -e "${RB}Gagal memperbarui konfigurasi Xray.${NC}"
+        exit 1
+    fi
+
+    mv "$tmp_file" "$CONFIG_FILE"
 }
 
 # Inisialisasi Variabel
@@ -57,14 +99,8 @@ done
 echo -e "${BB}————————————————————————————————————————————————————————${NC}"
 exp=$(date -d "$masaaktif days" +"%Y-%m-%d")
 
-# Menambahkan Konfigurasi ke File Xray
-add_xray_config "xtls" "},{\"flow\": \"xtls-rprx-vision\",\"id\": \"$uuid\",\"email\": \"$user\""
-add_xray_config "vless" "},{\"id\": \"$uuid\",\"email\": \"$user\""
-add_xray_config "universal" "},{\"id\": \"$uuid\",\"email\": \"$user\""
-add_xray_config "vmess" "},{\"id\": \"$uuid\",\"email\": \"$user\""
-add_xray_config "trojan" "},{\"password\": \"$pwtr\",\"email\": \"$user\""
-add_xray_config "ss" "},{\"password\": \"$pwss\",\"method\": \"$cipher\",\"email\": \"$user\""
-add_xray_config "ss22" "},{\"password\": \"$userpsk\",\"email\": \"$user\""
+add_xray_clients
+save_account
 
 ISP=$(cat /usr/local/etc/xray/org)
 CITY=$(cat /usr/local/etc/xray/city)
@@ -350,12 +386,12 @@ Expired On     : ${exp}</pre>
                 </div>
                 <div class="link-box">
                     <h3>XTLS-RPRX-VISION</h3>
-                    <pre id="vless-vision">${vlesslink5}</pre>
+                    <pre id="vless-vision">${vlesslink6}</pre>
                     <button onclick="copyToClipboard('vless-vision')">Copy</button>
                 </div>
                 <div class="link-box">
                     <h3>gRPC</h3>
-                    <pre id="vless-grpc">${vlesslink6}</pre>
+                    <pre id="vless-grpc">${vlesslink5}</pre>
                     <button onclick="copyToClipboard('vless-grpc')">Copy</button>
                 </div>
             </div>
@@ -391,12 +427,12 @@ Expired On     : ${exp}</pre>
                 </div>
                 <div class="link-box">
                     <h3>TCP TLS</h3>
-                    <pre id="trojan-tcp">${trojanlink5}</pre>
+                    <pre id="trojan-tcp">${trojanlink6}</pre>
                     <button onclick="copyToClipboard('trojan-tcp')">Copy</button>
                 </div>
                 <div class="link-box">
                     <h3>gRPC</h3>
-                    <pre id="trojan-grpc">${trojanlink6}</pre>
+                    <pre id="trojan-grpc">${trojanlink5}</pre>
                     <button onclick="copyToClipboard('trojan-grpc')">Copy</button>
                 </div>
             </div>
@@ -418,7 +454,7 @@ Expired On     : ${exp}</pre>
                 <div class="link-box">
                     <h3>Websocket non TLS</h3>
                     <pre id="ss-ws-ntls">${sslink2}</pre>
-                    <button onclick="copyToClipboard('ss-ntls')">Copy</button>
+                    <button onclick="copyToClipboard('ss-ws-ntls')">Copy</button>
                 </div>
                 <div class="link-box">
                     <h3>HTTPupgrade TLS</h3>

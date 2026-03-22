@@ -37,7 +37,8 @@ no_clients_menu() {
 }
 
 clear
-NUMBER_OF_CLIENTS=$(grep -c -E "^#&@ " "/usr/local/etc/xray/config/04_inbounds.json")
+ACCOUNTS_FILE="/usr/local/etc/xray/accounts.tsv"
+NUMBER_OF_CLIENTS=$(awk -F '\t' 'NF >= 2 { count++ } END { print count + 0 }' "$ACCOUNTS_FILE" 2>/dev/null)
 if [[ ${NUMBER_OF_CLIENTS} == '0' ]]; then
     no_clients_menu
 fi
@@ -48,7 +49,7 @@ echo -e "                  ${WB}Log All Xray Account${NC}                 "
 echo -e "${BB}————————————————————————————————————————————————————${NC}"
 echo -e " ${YB}User  Expired${NC}  "
 echo -e "${BB}————————————————————————————————————————————————————${NC}"
-grep -E "^#&@ " "/usr/local/etc/xray/config/04_inbounds.json" | cut -d ' ' -f 2-3 | column -t | sort | uniq
+awk -F '\t' 'NF >= 2 { print $1, $2 }' "$ACCOUNTS_FILE" | column -t | sort | uniq
 echo ""
 echo -e "${YB}Tap enter to go back${NC}"
 echo -e "${BB}————————————————————————————————————————————————————${NC}"

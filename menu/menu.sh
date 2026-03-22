@@ -11,60 +11,51 @@ MB='\e[35;1m'    # Magenta Bold
 CB='\e[36;1m'    # Cyan Bold
 WB='\e[37;1m'    # White Bold
 
-# Service control functions
+service_control() {
+    local title=$1
+    local cmd=$2
+
+    clear
+    echo -e "${BB}————————————————————————————————————————————————————————${NC}"
+    echo -e "              ${WB}${title} Service Control${NC}"
+    echo -e "${BB}————————————————————————————————————————————————————————${NC}"
+    echo -e " ${MB}[1]${NC} ${YB}Start${NC}"
+    echo -e " ${MB}[2]${NC} ${YB}Stop${NC}"
+    echo -e " ${MB}[3]${NC} ${YB}Restart${NC}"
+    echo -e " ${MB}[4]${NC} ${YB}Status${NC}"
+    echo -e " ${MB}[5]${NC} ${YB}Enable on boot${NC}"
+    echo -e " ${MB}[6]${NC} ${YB}Disable on boot${NC}"
+    echo -e " ${MB}[7]${NC} ${YB}Show logs${NC}"
+    echo -e " ${MB}[8]${NC} ${YB}Show config${NC}"
+    echo -e " ${MB}[0]${NC} ${YB}Back To Menu${NC}"
+    echo -e "${BB}————————————————————————————————————————————————————————${NC}"
+    read -p "Select action: " act
+    case $act in
+        1) "$cmd" start ;;
+        2) "$cmd" stop ;;
+        3) "$cmd" restart ;;
+        4) "$cmd" status ;;
+        5) "$cmd" enable ;;
+        6) "$cmd" disable ;;
+        7) "$cmd" logs ;;
+        8) "$cmd" config ;;
+        0) show_menu ;;
+        *) echo -e "${YB}Invalid selection${NC}" ;;
+    esac
+    read -n 1 -s -r -p "Press any key to back on menu"
+    show_menu
+}
+
 ssh_service() {
-    clear
-    echo -e "${YB}SSH Service Control${NC}"
-    echo "1) Start"
-    echo "2) Stop"
-    echo "3) Restart"
-    echo "4) Status"
-    read -p "Select action: " act
-    case $act in
-        1) ssh-ctl start ;;
-        2) ssh-ctl stop ;;
-        3) ssh-ctl restart ;;
-        4) ssh-ctl status ;;
-        *) echo -e "${YB}Invalid selection${NC}" ;;
-    esac
-    read -n 1 -s -r -p "Press any key to back on menu"
-    show_menu
+    service_control "SSH" ssh-ctl
 }
+
 sstp_service() {
-    clear
-    echo -e "${YB}SSTP Service Control${NC}"
-    echo "1) Start"
-    echo "2) Stop"
-    echo "3) Restart"
-    echo "4) Status"
-    read -p "Select action: " act
-    case $act in
-        1) sstp-ctl start ;;
-        2) sstp-ctl stop ;;
-        3) sstp-ctl restart ;;
-        4) sstp-ctl status ;;
-        *) echo -e "${YB}Invalid selection${NC}" ;;
-    esac
-    read -n 1 -s -r -p "Press any key to back on menu"
-    show_menu
+    service_control "SSTP" sstp-ctl
 }
+
 zivpn_service() {
-    clear
-    echo -e "${YB}ZIVPN Service Control${NC}"
-    echo "1) Start"
-    echo "2) Stop"
-    echo "3) Restart"
-    echo "4) Status"
-    read -p "Select action: " act
-    case $act in
-        1) zivpn-ctl start ;;
-        2) zivpn-ctl stop ;;
-        3) zivpn-ctl restart ;;
-        4) zivpn-ctl status ;;
-        *) echo -e "${YB}Invalid selection${NC}" ;;
-    esac
-    read -n 1 -s -r -p "Press any key to back on menu"
-    show_menu
+    service_control "ZIVPN" zivpn-ctl
 }
 
 # Fungsi untuk menampilkan menu

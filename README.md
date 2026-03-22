@@ -24,6 +24,9 @@ Saweria: https://saweria.co/dugonglewat
 | Shadowsocks 2022 HTTPupgrade | 443 & 80 |
 | Vless XTLS-RPRX-VISION | 443 |
 | Trojan TCP TLS | 443 |
+| SSH / Dropbear | system default |
+| SSTP | system default |
+| ZIVPN UDP | 1194 |
 | Vmess gRPC | 443 |
 | Vless gRPC | 443 |
 | Trojan gRPC | 443 |
@@ -32,17 +35,17 @@ Saweria: https://saweria.co/dugonglewat
 
 **Link Instalasi Opsi 1**
 ```
-bash -c "$(wget -qO- https://raw.githubusercontent.com/dugong-lewat/1clickxray/main/install.sh)"
+bash -c "$(wget -qO- https://raw.githubusercontent.com/Dmr255/sccvpn/main/install.sh)"
 ```
 ```
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/dugong-lewat/1clickxray/main/install.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Dmr255/sccvpn/main/install.sh)"
 ```
 
 
 **Link Instalasi Opsi 2**
 ```
-bash -c "$(wget -qO- https://raw.githubusercontent.com/dugong-lewat/1clickxray/main/install2.sh)"
+bash -c "$(wget -qO- https://raw.githubusercontent.com/Dmr255/sccvpn/main/install2.sh)"
 ```
 ```
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/dugong-lewat/1clickxray/main/install2.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Dmr255/sccvpn/main/install2.sh)"
 ```

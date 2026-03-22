@@ -208,7 +208,7 @@ update_nginx_config() {
     # Get new domain from file
     NEW_DOMAIN=$(cat /usr/local/etc/xray/dns/domain)
     # Update server_name in Nginx configuration
-    wget -q -O /etc/nginx/nginx.conf https://raw.githubusercontent.com/dugong-lewat/1clickxray/main/nginx.conf
+    wget -q -O /etc/nginx/nginx.conf https://raw.githubusercontent.com/Dmr255/sccvpn/main/nginx.conf
     sed -i "s/server_name web.com;/server_name $NEW_DOMAIN;/g" /etc/nginx/nginx.conf
     sed -i "s/server_name \*.web.com;/server_name \*.$NEW_DOMAIN;/" /etc/nginx/nginx.conf
 

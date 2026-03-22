@@ -41,7 +41,8 @@ function display_users() {
         return
     fi
 
-    local data=($(grep '^#&@' "$config_file" | cut -d ' ' -f 2 | sort | uniq))
+    local accounts_file="/usr/local/etc/xray/accounts.tsv"
+    local data=($(awk -F '\t' 'NF >= 2 { print $1 }' "$accounts_file" 2>/dev/null | sort | uniq))
     if [ ${#data[@]} -eq 0 ]; then
         echo -e "${RB}Tidak ada akun pengguna ditemukan.${NC}"
         return
