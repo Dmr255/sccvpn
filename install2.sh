@@ -77,8 +77,9 @@ sleep 1
 # Install paket keempat
 print_msg $YB "Memasang build-essential dan dependensi lainnya..."
 apt install build-essential libpcre3 libpcre3-dev zlib1g zlib1g-dev openssl libssl-dev gcc clang llvm g++ valgrind make cmake debian-keyring debian-archive-keyring apt-transport-https systemd bind9-host gnupg2 ca-certificates lsb-release ubuntu-keyring debian-archive-keyring -y
-apt install unzip python-is-python3 python3-pip -y
-pip install psutil pandas tabulate rich py-cpuinfo distro requests pycountry geoip2 #--break-system-packages
+apt install unzip python3-pip -y
+python3 -m pip install --upgrade pip setuptools wheel
+pip3 install psutil pandas tabulate rich py-cpuinfo distro requests pycountry geoip2
 check_success
 sleep 1
 
@@ -1668,6 +1669,66 @@ echo -e "${GB}[ INFO ]${NC} ${YB}Setup Done${NC}"
 sleep 3
 clear
 
+# Install Additional Services (SSH, SSTP, ZIVPN)
+print_msg $YB "Installing additional services..."
+apt update -y
+apt install -y openssh-server dropbear sstpd stunnel4
+check_success "Failed to install additional service packages"
+
+# ZIVPN build
+ZIVPN_DIR="/opt/zivpn"
+if [ ! -d "$ZIVPN_DIR" ]; then
+    git clone https://github.com/Diah082/UDP-ZIVPN.git "$ZIVPN_DIR"
+    cd "$ZIVPN_DIR"
+    make
+    make install
+    check_success "Failed to build ZIVPN"
+    cd /
+else
+    print_msg $YB "ZIVPN already installed, skipping."
+fi
+
+# Config files
+if [ ! -f /etc/zivpn.conf ]; then
+    cat > /etc/zivpn.conf <<'ZIVPN_EOF'
+port = 1194
+proto = udp
+dev = tun0
+secret = /etc/zivpn.secret
+verb = 3
+keepalive 10
+persist-key
+persist-tun
+ZIVPN_EOF
+    openssl rand -base64 32 > /etc/zivpn.secret
+    chmod 600 /etc/zivpn.secret
+fi
+
+# systemd service
+if [ ! -f /etc/systemd/system/zivpn.service ]; then
+    cat > /etc/systemd/system/zivpn.service <<'SVC_EOF'
+[Unit]
+Description=ZIVPN UDP VPN Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/zivpn --config /etc/zivpn.conf
+Restart=on-failure
+RestartSec=5
+CapabilityBoundingSet=CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_ADMIN
+
+[Install]
+WantedBy=multi-user.target
+SVC_EOF
+fi
+
+systemctl daemon-reload
+systemctl enable zivpn
+
+print_msg $GB "Additional services installed."
+
 # Blokir lalu lintas torrent (BitTorrent)
 sudo iptables -A INPUT -p udp --dport 6881:6889 -j DROP
 sudo iptables -A INPUT -p tcp --dport 6881:6889 -j DROP
@@ -1677,7 +1738,11 @@ sudo iptables -A INPUT -p udp --dport 6881:6889 -m string --algo bm --string "Bi
 cd /usr/bin
 GITHUB=raw.githubusercontent.com/dugong-lewat/1clickxray/main/
 echo -e "${GB}[ INFO ]${NC} ${YB}Mengunduh menu utama...${NC}"
-wget -q -O menu "https://${GITHUB}/menu/menu.sh"
+if [ -f "$(dirname "$0")/menu/menu.sh" ]; then
+    cp "$(dirname "$0")/menu/menu.sh" /usr/bin/menu
+else
+    wget -q -O /usr/bin/menu "https://${GITHUB}/menu/menu.sh"
+fi
 wget -q -O allxray "https://${GITHUB}/menu/allxray.sh"
 wget -q -O del-xray "https://${GITHUB}/xray/del-xray.sh"
 wget -q -O extend-xray "https://${GITHUB}/xray/extend-xray.sh"
@@ -1698,8 +1763,88 @@ wget -q -O clear-log "https://${GITHUB}/other/clear-log.sh"
 wget -q -O log-xray "https://${GITHUB}/other/log-xray.sh"
 wget -q -O update-xray "https://${GITHUB}/other/update-xray.sh"
 
+# Create control scripts for additional services
+cat > /usr/bin/ssh-ctl <<'EOF_SSH'
+#!/bin/bash
+case "$1" in
+    start)
+        systemctl start ssh
+        systemctl start dropbear 2>/dev/null || true
+        echo "SSH services started."
+        ;;
+    stop)
+        systemctl stop ssh
+        systemctl stop dropbear 2>/dev/null || true
+        echo "SSH services stopped."
+        ;;
+    restart)
+        systemctl restart ssh
+        systemctl restart dropbear 2>/dev/null || true
+        echo "SSH services restarted."
+        ;;
+    status)
+        systemctl status ssh
+        systemctl status dropbear 2>/dev/null || true
+        ;;
+    *)
+        echo "Usage: ssh-ctl {start|stop|restart|status}"
+        exit 1
+esac
+EOF_SSH
+chmod +x /usr/bin/ssh-ctl
+
+cat > /usr/bin/sstp-ctl <<'EOF_SSTP'
+#!/bin/bash
+case "$1" in
+    start)
+        systemctl start sstpd
+        echo "SSTP service started."
+        ;;
+    stop)
+        systemctl stop sstpd
+        echo "SSTP service stopped."
+        ;;
+    restart)
+        systemctl restart sstpd
+        echo "SSTP service restarted."
+        ;;
+    status)
+        systemctl status sstpd
+        ;;
+    *)
+        echo "Usage: sstp-ctl {start|stop|restart|status}"
+        exit 1
+esac
+EOF_SSTP
+chmod +x /usr/bin/sstp-ctl
+
+cat > /usr/bin/zivpn-ctl <<'EOF_ZIVPN'
+#!/bin/bash
+case "$1" in
+    start)
+        systemctl start zivpn
+        echo "ZIVPN service started."
+        ;;
+    stop)
+        systemctl stop zivpn
+        echo "ZIVPN service stopped."
+        ;;
+    restart)
+        systemctl restart zivpn
+        echo "ZIVPN service restarted."
+        ;;
+    status)
+        systemctl status zivpn
+        ;;
+    *)
+        echo "Usage: zivpn-ctl {start|stop|restart|status}"
+        exit 1
+esac
+EOF_ZIVPN
+chmod +x /usr/bin/zivpn-ctl
+
 echo -e "${GB}[ INFO ]${NC} ${YB}Memberikan izin eksekusi pada skrip...${NC}"
-chmod +x del-xray extend-xray create-xray cek-xray log-xray menu allxray xp dns certxray about clear-log update-xray route-xray
+chmod +x del-xray extend-xray create-xray cek-xray log-xray menu allxray xp dns certxray about clear-log update-xray route-xray ssh-ctl sstp-ctl zivpn-ctl
 echo -e "${GB}[ INFO ]${NC} ${YB}Persiapan Selesai.${NC}"
 sleep 3
 cd
